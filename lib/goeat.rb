@@ -10,6 +10,7 @@ require "goeat/interface"
 
 # Change this to adjust the map wall density
 WALL_DENSITY = 0.40 # 0.40 for 40%
+DRIVER_COST_PER_UNIT_DISTANCE = 300
 
 module Goeat
     opts = Slop.parse do |options|
@@ -33,38 +34,55 @@ module Goeat
         map.generate
         map.put_user([10, 10])
         map.put_driver_random(5)
-        map.put_restaurant_random(5)
-        interface = Interface.new(map)
-        interface.show_menu
-        #m = Map.new(20, 20, WALL_DENSITY)
-        #m.generate
-        #puts "putting random driver"
-        #m.puts_object_random(m.GOJEK_DRIVER, 4)
-        #from = m.GOJEK_DRIVER_L[0]
-        #to = m.nearest(m.GOJEK_DRIVER_L[0], m.GOJEK_DRIVER)
-        #m.draw_path(m.shortest_path(from, to))
-        #puts "done"
-        #m.print_map
+        map.put_restaurant_random(3)
+        interface = Interface.new(map, DRIVER_COST_PER_UNIT_DISTANCE)
+        begin
+            interface.show_menu
+        rescue Interrupt
+            interface.quit
+        end
     elsif arguments_length == 1
-        filename = opts.arguments[0]
-        if File.file?(filename)
+        file_name = opts.arguments[0]
+        if File.file?(file_name)
             begin
-                #data = TOML.load_file(filename)
-                #m = Map.new(20, 20, WALL_DENSITY)
-                #m.from(data["map"])
-                #m.print_map
+                file_data = TOML.load_file(file_name)
             rescue NoMethodError
                 puts "File format might be error"
+                exit
+            end
+            if file_data["map"].length < 20
+                puts "Invalid file: The map is too small"
+                exit
+            else
+                if file_data["map"][0].length < 20
+                    puts "Invalid file: The map is too small"
+                    exit
+                end
+            end
+            map = Map.new(file_data["map"][0].length, file_data["map"].length, WALL_DENSITY)
+            interface = Interface.new(map, DRIVER_COST_PER_UNIT_DISTANCE)
+            interface.from_data(file_data)
+            begin
+                interface.show_menu
+            rescue Interrupt
+                interface.quit
             end
         end
     elsif arguments_length == 3
-        map = Map.new(arguments[0].to_i, arguments[0].to_i, WALL_DENSITY)
+        map_side_size = arguments[0].to_i
+        map = Map.new(map_side_size, map_side_size, WALL_DENSITY)
         map.generate
         user_coord = [arguments[1].to_i, arguments[2].to_i]
-        map.put_user(user_coord)
+        user_x_position, user_y_position = user_coord
+        begin
+            map.put_user(user_coord)
+        rescue RangeError
+            puts "Invalid input: Invalid user location"
+            exit
+        end
         map.put_driver_random(5)
-        map.put_restaurant_random(5)
-        interface = Interface.new(map)
+        map.put_restaurant_random(3)
+        interface = Interface.new(map, DRIVER_COST_PER_UNIT_DISTANCE)
         begin
             interface.show_menu
         rescue Interrupt
