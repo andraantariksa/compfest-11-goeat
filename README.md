@@ -1,20 +1,72 @@
 # Go-Eat
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/goeat`. To experiment with that code, run `bin/console` for an interactive prompt.
+Thanks for using Go-Eat! Order your food now – all you need to do is just order the food from the restaurant that are available on the apps.
 
-TODO: Delete this and the text above, and describe your gem
+HOW TO USE GO-EAT
+
+1. Select your restaurant – Select your favorite restaurant
+2. See the menu and your food cost – We’ll let you know how much the food costs, then ORDER GO-EAT when you’re have done
+3. Pay in cash – Currently, Go-Eat only accept cash payment
+4. Take the food – Get ready as the nearest driver-partner makes their way to you, then you can take the food that you have already ordered
+4. Enjoy the food
+
+MAP LEGEND
+R – Restaurant
+D – Driver
+@ – You
+
+```
+# # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # #
+# # # # # D # # # # # # # # # # # # # #
+# # # #     # #         # # # # # # # #
+# # # #                 # # # # # # # #
+# # #                       # # # # # #
+# #                     R   # # # # # #
+# # # R                   # # # # # # #
+# # # # D               R   # # # # # #
+# # # # #   D                 # # # # #
+# # # # #           @       # # # # # #
+# # # # #                 D # # # # # #
+#     #           # #         # # # # #
+#                   # #         # # # #
+#                 # # #           # # #
+#                 # # #     #       # #
+# #                 # # # # # #   D   #
+# #                   # # # # # #   # #
+# # # #           # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # #
+```
 
 ## Usage
 
-Execute this command:
+There's 3 way to use Go-Eat
+
+### Without any argument
 
 ```
 ruby lib/goeat.rb
 ```
 
-## Usage
+### With file path as it's argument
 
-TODO: Write usage instructions here
+```
+ruby lib/goeat.rb spec/example.toml
+```
+
+### With 3 arguments
+
+```
+ruby lib/goeat.rb MAP_SIDE_SIZE USER_X_POSITION USER_Y_POSITION
+```
+
+e.g
+
+```
+ruby lib/goeat.rb 20 10 10
+```
+
+There's a border on the map so you can't make the user on the border, in this case USER_X_POSITION as 0 or USER_X_POSITION as 10 (as the coordinate starts from 0).
 
 ## Why TOML?
 
