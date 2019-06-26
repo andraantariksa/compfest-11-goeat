@@ -17,6 +17,8 @@ class Interface
         err_message = ""
         while true
             clear
+            print "   _____    ____             ______              _______ \n  \/ ____|  \/ __ \\           |  ____|     \/\\     |__   __|\n | |  __  | |  | |  ______  | |__       \/  \\       | |   \n | | |_ | | |  | | |______| |  __|     \/ \/\\ \\      | |   \n | |__| | | |__| |          | |____   \/ ____ \\     | |   \n  \\_____|  \\____\/           |______| \/_\/    \\_\\    |_|   "
+            small_line_separator
             puts "Available command:"
             puts "[1] Show Map"
             puts "[2] Order Food"
