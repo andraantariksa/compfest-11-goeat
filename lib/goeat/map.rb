@@ -10,7 +10,7 @@ require "set"
 # - Pick a random `(width * height) * walls_percentage` map element and change them into a "floor"
 
 class Map
-    attr_reader :drivers, :restaurants
+    attr_reader :drivers, :restaurants, :map
 
     def initialize(width, height, walls_percentage)
         @width = width
@@ -26,6 +26,8 @@ class Map
         @WALL = 1
         @FLOOR = 2
         @PATH = 3
+        @DRIVER = 4
+        @RESTAURANT = 5
         @USER = 7
 
         @drivers = []
@@ -35,20 +37,88 @@ class Map
         set_border()
     end
 
+=begin
+    def map_toml
+        map_data = {}
+
+        map_temp = @map
+        for y in 0...map_temp.length
+            for x in 0...map_temp[y].length
+                if map_temp[y][x].instance_of?(Driver)
+                    map_temp[y][x] = @DRIVER
+                elsif map_temp[y][x].instance_of?(Restaurant)
+                    map_temp[y][x] = @RESTAURANT
+                end
+            end
+        end
+
+        map_data["map"] = map_temp
+
+        map_data["drivers"] = @drivers.map do |element|
+            driver_obj = element["object"]
+            {
+                "coord" => element["coord"],
+                "object" => {
+                    "name" => driver_obj.name,
+                    "rating" => driver_obj.rating,
+                    "plate" => driver_obj.plate,
+                    "first_time" => driver_obj.first_time,
+                }
+            }
+        end
+
+        map_data["restaurants"] = @restaurants.map do |element|
+            restaurant_obj = element["object"]
+            {
+                "coord" => element["coord"],
+                "object" => {
+                    "name" => restaurant_obj.name,
+                    "menu" => restaurant_obj.menu,
+                },
+            }
+        end
+
+        map_data
+    end
+=end
+
+    def from_data(data)
+        @map = data["map"]
+        for driver in data["drivers"]
+            driver_obj_rep = driver["object"]
+            driver_obj_real = Driver.new
+            driver_obj_real.name = driver_obj_rep["name"]
+            driver_obj_real.plate = driver_obj_rep["plate"]
+            driver_obj_real.rating = driver_obj_rep["rating"]
+            driver_obj_real.first_time = driver_obj_rep["first_time"]
+            x, y = driver["coord"]
+            @map[y][x] = driver_obj_real
+            @drivers.push({
+                            "coord" => driver["coord"],
+                            "object" => driver_obj_real
+            })
+        end
+
+        for restaurant in data["restaurants"]
+            restaurant_obj_rep = restaurant["object"]
+            restaurant_obj_real = Restaurant.new
+            restaurant_obj_real.name = restaurant_obj_rep["name"]
+            restaurant_obj_real.menu = restaurant_obj_rep["menu"]
+            x, y = restaurant["coord"]
+            @map[y][x] = restaurant_obj_real
+            @restaurants.push({
+                                "coord" => restaurant["coord"],
+                                "object" => restaurant_obj_real
+            })
+        end
+    end
+
     def generate
         random_open_space
         clear_random_open_space
         join_rooms
         clear_small_wall
         @map
-    end
-
-    # Load map from an array
-    def from(map_list)
-        if map_list.length < 20 or map_list[0].length < 20
-            raise "Map is too small"
-        end
-        @map = map_list
     end
 
     def show_map
@@ -341,6 +411,29 @@ class Map
         end
     end
 
+    def shortest_path_to_user(start_coord)
+        queue = Queue.new
+        queue << [start_coord]
+        seen = Set.new([start_coord])
+        while queue
+            begin
+                path = queue.pop(non_block = true)
+            rescue ThreadError
+                return nil
+            end
+            x, y = path[-1]
+            if @map[y][x] == @USER
+                return path
+            end
+            for x2, y2 in [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]]
+                if (0 <= x2 && x2 < @map[0].length) && (0 <= y2 && y2 < @map.length) && (@map[y2][x2] != @WALL && @map[y2][x2] != @PERMANENT_WALL) && !seen.include?([x2, y2])
+                    queue << (path + [[x2, y2]])
+                    seen.add([x2, y2])
+                end
+            end
+        end
+    end
+
     def nearest_driver(coord_from)
         queue = Queue.new
         queue << [coord_from]
@@ -353,7 +446,7 @@ class Map
             end
             x, y = path[-1]
             if @map[y][x].instance_of?(Driver) && [x, y] != coord_from
-                return { "coord" => [x, y], "route" => path }
+                return { "coord" => [x, y], "route" => path, "object" => @map[y][x] }
             end
             for x2, y2 in [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]]
                 if (0 <= x2 && x2 < @map[0].length) && (0 <= y2 && y2 < @map.length) && (@map[y2][x2] != @WALL && @map[y2][x2] != @PERMANENT_WALL) && !seen.include?([x2, y2])
@@ -364,18 +457,53 @@ class Map
         end
     end
 
+    def put_random(object)
+        while true
+            random_row = rand(1...@height - 1)
+            random_column = rand(1...@width - 1)
+
+            if @map[random_row][random_column] == @FLOOR
+                @map[random_row][random_column] = object
+                return [random_column, random_row]
+            end
+        end
+    end
+
+    def delete_driver(driver_coord)
+        x, y = driver_coord
+        @map[y][x] = @FLOOR
+    end
+
+    def check_drivers
+        drivers.delete_if do |element|
+            element["object"].suspended?
+        end
+
+        if drivers == 0
+            map.put_driver_random(5)
+        end
+    end
+
     def show_map_with_path(path)
-        map_temp = @map
+        map_temp = @map.map(&:clone)
         for x, y in path
             map_temp[y][x] = @PATH
         end
         for row in map_temp
             row_to_print = []
             for item in row
-                if item == @WALL || item == @PERMANENT_WALL
-                    row_to_print.push("#")
+                if item == @FLOOR
+                    row_to_print.push(" ")
                 elsif item == @PATH
                     row_to_print.push(".")
+                elsif item == @USER
+                    row_to_print.push("\e[32m@\e[0m") # @ with green color
+                elsif item.instance_of?(Driver)
+                    row_to_print.push("D")
+                elsif item.instance_of?(Restaurant)
+                    row_to_print.push("R")
+                elsif item == @WALL || item == @PERMANENT_WALL
+                    row_to_print.push("#")
                 else
                     row_to_print.push(" ")
                 end
