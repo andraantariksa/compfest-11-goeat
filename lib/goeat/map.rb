@@ -60,51 +60,6 @@ class Map
         end
     end
 
-=begin
-    def map_toml
-        map_data = {}
-
-        map_temp = @map
-        for y in 0...map_temp.length
-            for x in 0...map_temp[y].length
-                if map_temp[y][x].instance_of?(Driver)
-                    map_temp[y][x] = @DRIVER
-                elsif map_temp[y][x].instance_of?(Restaurant)
-                    map_temp[y][x] = @RESTAURANT
-                end
-            end
-        end
-
-        map_data["map"] = map_temp
-
-        map_data["drivers"] = @drivers.map do |element|
-            driver_obj = element["object"]
-            {
-                "coord" => element["coord"],
-                "object" => {
-                    "name" => driver_obj.name,
-                    "rating" => driver_obj.rating,
-                    "plate" => driver_obj.plate,
-                    "first_time" => driver_obj.first_time,
-                }
-            }
-        end
-
-        map_data["restaurants"] = @restaurants.map do |element|
-            restaurant_obj = element["object"]
-            {
-                "coord" => element["coord"],
-                "object" => {
-                    "name" => restaurant_obj.name,
-                    "menu" => restaurant_obj.menu,
-                },
-            }
-        end
-
-        map_data
-    end
-=end
-
     # Loading map from a data
     def from_data(data)
         @map = data["map"]

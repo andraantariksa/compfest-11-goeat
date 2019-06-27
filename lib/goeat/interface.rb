@@ -107,9 +107,6 @@ class Interface
         driver_obj = driver["object"]
         restaurant_obj = restaurant["object"]
 
-        driver_cost_to_restaurant = (driver["route"].length - 2) * @driver_cost_per_unit
-        driver_cost_to_customer =  (path_to_user.length - 2) * @driver_cost_per_unit
-
         puts "We have got you a driver!"
         small_line_separator
         puts "=" * 53
@@ -118,7 +115,7 @@ class Interface
         puts driver_obj.name
         puts driver_obj.plate
         if driver_obj.first_time
-            puts "It's his first time of driving!"
+            puts "It's his first time of driving with Go-Eat!"
         else
             puts "Rating #{driver_obj.rating}"
         end
@@ -406,12 +403,5 @@ D – Driver
         input.downcase!
         input.strip!
         input
-    end
-
-    def read_file(file_name)
-        file = File.open(file_name, "r")
-        data = file.read
-        file.close
-        return data
     end
 end

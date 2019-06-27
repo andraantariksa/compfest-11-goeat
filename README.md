@@ -90,7 +90,7 @@ rspec
 
 ### Map generation
 
-When you try to run Go-Eat, the application will generate a random map immediately. The map was generated with cellular automata map generation.
+When you try to run Go-Eat, the application will generate a random map immediately. The map was generated with [cellular automata map generation](http://www.roguebasin.com/index.php?title=Cellular_Automata_Method_for_Generating_Random_Cave-Like_Levels).
 
 #### How it works
 
