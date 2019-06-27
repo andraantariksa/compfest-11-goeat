@@ -1,4 +1,3 @@
-
 # A simple disjoint set ADT which uses path compression on finds to speed things up
 class DisjointSet
     attr_reader :items

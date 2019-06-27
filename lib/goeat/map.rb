@@ -3,20 +3,39 @@ require_relative "driver"
 require_relative "restaurant"
 require "set"
 
-# Cellular Automata Map Generation
-#
-# - Create a map (or a rectangle or a 2 dimentional array) with a certain size (`width` x `height`) consist of "wall" as it's elements
-# - Set up the border, so the border wouldn't be used
-# - Pick a random `(width * height) * walls_percentage` map element and change them into a "floor"
-
 class Map
     attr_reader :drivers, :restaurants, :map
 
-    def initialize(width, height, walls_percentage)
+    def initialize(width: nil, height: nil, file_name: nil, wall_percentage: 40)
+        if file_name != nil
+            if File.file?(file_name)
+                begin
+                    file_data = TOML.load_file(file_name)
+                rescue NoMethodError
+                    raise "File format might be error"
+                end
+                if file_data["map"].length < 20
+                    raise "The map is too small"
+                    exit
+                else
+                    if file_data["map"][0].length < 20
+                        raise "The map is too small"
+                    end
+                end
+                width = file_data["map"][0].length
+                height = file_data["map"].length
+            else
+                raise "File not found"
+            end
+        end
+        if width == nil || height == nil
+            raise "Width and height are not defined"
+        end
+
         @width = width
         @height = height
         @area = width * height
-        @walls_percentage = walls_percentage
+        @wall_percentage = wall_percentage
         @map = []
         @center_point = [width / 2, height / 2]
         @disjoinset = DisjointSet.new
@@ -35,6 +54,10 @@ class Map
 
         generate_initial_map()
         set_border()
+
+        if file_name != nil
+            from_data(file_data)
+        end
     end
 
 =begin
@@ -82,6 +105,7 @@ class Map
     end
 =end
 
+    # Loading map from a data
     def from_data(data)
         @map = data["map"]
         for driver in data["drivers"]
@@ -111,6 +135,11 @@ class Map
                                 "object" => restaurant_obj_real
             })
         end
+
+        # If there's more than 1 connected cave rooms
+        if populate_caves.length > 1
+            raise "There's can only one cave room!"
+        end
     end
 
     def generate
@@ -121,26 +150,30 @@ class Map
         @map
     end
 
+    # Print the map
     def show_map
         for row in @map
             row_to_print = []
             for item in row
                 if item == @FLOOR
-                    row_to_print.push(" ")
+                    row_to_print.push(" ") # Floor
                 elsif item == @USER
                     row_to_print.push("\e[32m@\e[0m") # @ with green color
                 elsif item.instance_of?(Driver)
-                    row_to_print.push("D")
+                    row_to_print.push("D") # Driver
                 elsif item.instance_of?(Restaurant)
-                    row_to_print.push("R")
-                else
+                    row_to_print.push("R") # Restaurant
+                elsif item == @WALL || item == @PERMANENT_WALL
                     row_to_print.push("#")
+                else
+                    row_to_print.push(" ")
                 end
             end
             puts row_to_print.join(" ")
         end
     end
 
+    # Generate initial map that only consist of wall
     def generate_initial_map
         for _ in 0...@height
             temp = []
@@ -165,7 +198,7 @@ class Map
     end
 
     def random_open_space
-        total_open_space = (@area * @walls_percentage).to_i
+        total_open_space = (@area * @wall_percentage).to_i
 
         while total_open_space > 0
             random_row = rand(1...@height - 1)
@@ -182,7 +215,6 @@ class Map
         for row_i in 1...@height - 1
             for column_i in 1...@width - 1
                 total_wall = count_adjacent_wall(row_i, column_i)
-
                 if @map[row_i][column_i] == @FLOOR
                     if total_wall > 5
                         @map[row_i][column_i] = @WALL
@@ -194,6 +226,7 @@ class Map
         end
     end
 
+    # Clear unnecessary wall tht only have < 2 surrounding wall
     def clear_small_wall
         for row_i in 1...@height - 1
             for column_i in 1...@width - 1
@@ -209,6 +242,7 @@ class Map
         end
     end
 
+    # Put driver randomly
     def put_driver_random(total_driver)
         while total_driver > 0
             random_row = rand(1...@height - 1)
@@ -226,6 +260,7 @@ class Map
         end
     end
 
+    # Put restaurant randomly
     def put_restaurant_random(total_restaurant)
         while total_restaurant > 0
             random_row = rand(1...@height - 1)
@@ -262,7 +297,7 @@ class Map
         clear_small_wall
     end
 
-    # Check surrounding wall
+    # Count surrounding wall
     def count_adjacent_wall(row_i, col_i)
         total = 0
 
@@ -299,7 +334,9 @@ class Map
         end
     end
 
-    def join_rooms
+    # Counting the caves
+    # It will return a list of cave rooms coordinate
+    def populate_caves
         for row_i in 1...@height - 1
             for column_i in 1...@width - 1
                 if @map[row_i][column_i] == @FLOOR
@@ -308,8 +345,12 @@ class Map
             end
         end
 
-        all_caves = @disjoinset.split_sets()
+        @disjoinset.split_sets()
+    end
 
+    # Joining the cave rooms
+    def join_rooms
+        all_caves = populate_caves
         for cave in all_caves.keys()
             join_points(all_caves[cave][0])
         end
@@ -387,7 +428,7 @@ class Map
         end
     end
 
-    # Shortest path using breadth first search
+    # Find the shortest path from one coordinate to other coordinate
     def shortest_path(start_coord, destination_coord)
         queue = Queue.new
         queue << [start_coord]
@@ -411,6 +452,9 @@ class Map
         end
     end
 
+
+    # Find the nearest path to user from the given coordinate
+    # It will return the shortest path to the user
     def shortest_path_to_user(start_coord)
         queue = Queue.new
         queue << [start_coord]
@@ -434,6 +478,9 @@ class Map
         end
     end
 
+    # Find the nearest driver from given coordinate
+    # It will return a hash about the nearest driver coordinate, driver object,
+    # and the shortest route to the driver
     def nearest_driver(coord_from)
         queue = Queue.new
         queue << [coord_from]
@@ -457,6 +504,7 @@ class Map
         end
     end
 
+    # Put an object randomly on map floor
     def put_random(object)
         while true
             random_row = rand(1...@height - 1)
@@ -469,41 +517,37 @@ class Map
         end
     end
 
+    # Delete driver from the map
     def delete_driver(driver_coord)
+        @drivers.delete_if do |driver|
+            driver["coord"] == driver_coord
+        end
         x, y = driver_coord
         @map[y][x] = @FLOOR
     end
 
-    def check_drivers
-        drivers.delete_if do |element|
-            element["object"].suspended?
-        end
-
-        if drivers == 0
-            map.put_driver_random(5)
-        end
-    end
-
+    # Show the path that has been passed
+    # Path should be an array of coordinate
     def show_map_with_path(path)
-        map_temp = @map.map(&:clone)
+        map_temp = @map.map(&:clone) # Had to clone the map
         for x, y in path
-            map_temp[y][x] = @PATH
+            map_temp[y][x] = @PATH # Writing down the path
         end
         for row in map_temp
             row_to_print = []
             for item in row
                 if item == @FLOOR
-                    row_to_print.push(" ")
+                    row_to_print.push(" ") # Floor
                 elsif item == @PATH
-                    row_to_print.push(".")
+                    row_to_print.push(".") # Path that the driver has passed
                 elsif item == @USER
                     row_to_print.push("\e[32m@\e[0m") # @ with green color
                 elsif item.instance_of?(Driver)
-                    row_to_print.push("D")
+                    row_to_print.push("D") # Driver
                 elsif item.instance_of?(Restaurant)
-                    row_to_print.push("R")
+                    row_to_print.push("R") # Restaurant
                 elsif item == @WALL || item == @PERMANENT_WALL
-                    row_to_print.push("#")
+                    row_to_print.push("#") # Wall
                 else
                     row_to_print.push(" ")
                 end

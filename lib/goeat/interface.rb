@@ -5,6 +5,7 @@ class Interface
     def initialize(map, driver_cost_per_unit)
         @map_obj = map
         @driver_cost_per_unit = driver_cost_per_unit
+        @order_history = []
     end
 
     # Clear the console screen
@@ -12,6 +13,7 @@ class Interface
         puts "\n" * 40
     end
 
+    # Show main menu
     def show_menu
         # Error message
         err_message = ""
@@ -30,10 +32,8 @@ class Interface
                 puts err_message
             end
 
-            print "> "
-            input = STDIN.gets
-            input.downcase!
-            input.strip!
+            input = take_input
+
             begin
                 input_number = Integer(input)
             rescue ArgumentError
@@ -64,6 +64,7 @@ class Interface
         exit
     end
 
+    # Show available restaurant
     def show_restaurant
         err_message = ""
         while true
@@ -79,10 +80,9 @@ class Interface
             if err_message != ""
                 puts err_message
             end
-            print "> "
-            input = STDIN.gets
-            input.downcase!
-            input.strip!
+
+            input = take_input
+
             begin
                 input_number = Integer(input)
             rescue ArgumentError
@@ -100,7 +100,7 @@ class Interface
 
     end
 
-    def deliver(restaurant, cart, driver, path_to_user)
+    def deliver(restaurant, invoice, driver, path_to_user)
         clear
         err_message = ""
 
@@ -135,9 +135,6 @@ class Interface
         clear
         @map_obj.delete_driver(driver["coord"])
         @map_obj.show_map_with_path(path_to_user.slice(1...-1))
-        # The driver moves to another place on the map aka mangkal
-        new_driver_coord = @map_obj.put_random(driver["object"])
-        driver["coord"] = new_driver_coord
         hold
 
         clear
@@ -158,10 +155,9 @@ class Interface
             if err_message != ""
                 puts err_message
             end
-            print "> "
-            input = STDIN.gets
-            input.downcase!
-            input.strip!
+
+            input = take_input
+
             begin
                 input_number = Integer(input)
             rescue ArgumentError
@@ -170,7 +166,16 @@ class Interface
             end
             if 1 <= input_number && input_number <= 5
                 driver_obj.rate(input_number.to_f)
-                @map_obj.check_drivers
+                # If the driver not suspended, he can stil work as a driver
+                if !driver_obj.suspended?
+                    # The driver moves to another place on the map aka mangkal
+                    new_driver_coord = @map_obj.put_random(driver_obj)
+                    driver["coord"] = new_driver_coord
+                    @map_obj.drivers.push(driver)
+                end
+                if @map_obj.drivers.length == 0
+                    @map_obj.put_driver_random(5)
+                end
                 break
             else
                 err_message = "You can only rate the driver between 1 to 5."
@@ -178,26 +183,14 @@ class Interface
         end
 
         time = Time.now
+
+        @order_history.push({
+                                "time" => time,
+                                "invoice" => invoice
+        })
+
         file = File.open("tx_log/tx-#{time.hour}-#{time.min}-#{time.sec}-#{time.day}-#{time.month}-#{time.year}.txt", "w")
-        file.puts "#{restaurant_obj.name}'s Invoice"
-        file.puts "=" * 53
-        file.printf("%-5s %-20s   %-6s   %-3s %-8s\n", "No.", "Name", "Price", "Qty", "Subtotal")
-        file.puts "=" * 53
-        total_price = 0
-        restaurant_obj.menu.each_with_index do |menu_item, idx|
-            total_price += cart[idx] * menu_item["price"]
-            file.printf("[%2d] %-20s - %6d - %3d - %10d\n", idx + 1, menu_item["name"], menu_item["price"], cart[idx], cart[idx] * menu_item["price"])
-        end
-        file.puts "[ 0] Cancel"
-        file.puts "=" * 53
-        file.printf("Driver cost %47d\n", driver_cost_to_restaurant + driver_cost_to_customer)
-        file.puts "=" * 53
-        file.printf("Grand total %47d\n", total_price + driver_cost_to_restaurant + driver_cost_to_customer)
-        file.puts "=" * 53
-        file.puts ""
-        file.puts "Driver name: #{driver_obj.name}"
-        file.puts "Driver plate: #{driver_obj.plate}"
-        file.puts "Rating that you give: #{input_number}"
+        file.puts invoice
         file.close
 
         true
@@ -208,48 +201,58 @@ class Interface
         driver = @map_obj.nearest_driver(restaurant["coord"])
         path_to_user = @map_obj.shortest_path_to_user(restaurant["coord"])
 
-        driver_cost_to_restaurant = (driver["route"].length - 2) * @driver_cost_per_unit
-        driver_cost_to_customer =  (path_to_user.length - 2) * @driver_cost_per_unit
+        driver_cost_to_restaurant = (driver["route"].length - 1) * @driver_cost_per_unit
+        driver_cost_to_customer =  (path_to_user.length - 1) * @driver_cost_per_unit
 
         err_message = ""
 
         while true
             clear
-            puts "#{restaurant_obj.name}'s Invoice"
-            puts "=" * 53
-            printf("%-5s %-20s   %-6s   %-3s %-8s\n", "No.", "Name", "Price", "Qty", "Subtotal")
-            puts "=" * 53
-            total_price = 0
-            restaurant_obj.menu.each_with_index do |menu_item, idx|
-                total_price += cart[idx] * menu_item["price"]
-                printf("[%2d] %-20s - %6d - %3d - %10d\n", idx + 1, menu_item["name"], menu_item["price"], cart[idx], cart[idx] * menu_item["price"])
-            end
-            puts "[ 0] Cancel"
-            puts "=" * 53
-            printf("Total food price %36d\n", total_price)
-            puts "=" * 53
-            printf("Driver cost %41d\n", driver_cost_to_restaurant + driver_cost_to_customer)
-            puts "=" * 53
-            printf("Grand total %41d\n", total_price + driver_cost_to_restaurant + driver_cost_to_customer)
-            puts "=" * 53
+
+            invoice = generate_invoice(restaurant, cart, driver_cost_to_restaurant, driver_cost_to_customer)
+            puts invoice
+
             small_line_separator
             puts "Are you sure you want to purchase this? (yes/no)"
             if err_message != ""
                 puts err_message
             end
-            print "> "
-            input = STDIN.gets
-            input.downcase!
-            input.strip!
+
+            input = take_input
+
             case input
             when "yes"
-                return deliver(restaurant, cart, driver, path_to_user)
+                return deliver(restaurant, invoice, driver, path_to_user)
             when "no"
                 return false
             else
                 err_message = "Invalid input"
             end
         end
+    end
+
+    def generate_invoice(restaurant, cart, driver_cost_to_restaurant, driver_cost_to_customer)
+        restaurant_obj = restaurant["object"]
+
+        invoice = ""
+        invoice += "#{restaurant_obj.name}'s Invoice\n"
+        invoice += "=" * 53 + "\n"
+        invoice += "%-5s %-20s   %-6s   %-3s %-8s\n" % ["No.", "Name", "Price", "Qty", "Subtotal"]
+        invoice += "=" * 53 + "\n"
+        total_price = 0
+        restaurant_obj.menu.each_with_index do |menu_item, idx|
+            total_price += cart[idx] * menu_item["price"]
+            invoice += "[%2d] %-20s - %6d - %3d - %10d\n" % [idx + 1, menu_item["name"], menu_item["price"], cart[idx], cart[idx] * menu_item["price"]]
+        end
+        invoice += "[ 0] Cancel\n"
+        invoice += "=" * 53 + "\n"
+        invoice += "Total food price %36d\n" % [total_price]
+        invoice += "=" * 53 + "\n"
+        invoice += "Driver cost %41d\n" % [driver_cost_to_restaurant + driver_cost_to_customer]
+        invoice += "=" * 53 + "\n"
+        invoice += "Grand total %41d\n" % [total_price + driver_cost_to_restaurant + driver_cost_to_customer]
+        invoice += "=" * 53
+        invoice
     end
 
     def show_restaurant_menu(restaurant)
@@ -279,10 +282,7 @@ class Interface
                 puts err_message
             end
 
-            print "> "
-            input = STDIN.gets
-            input.downcase!
-            input.strip!
+            input = take_input
 
             if input == "checkout"
                 if !cart.any? { |element| element > 0 }
@@ -351,6 +351,7 @@ D – Driver
         hold
     end
 
+    # Hold the user until he press return button
     def hold
         puts "\nPress RETURN to continue"
         STDIN.gets
@@ -365,16 +366,10 @@ D – Driver
 
         while true
             clear
-            files_in_tx = Dir.entries("tx_log").filter { |file_name| file_name.match(/^tx-(\d{1,2})-(\d{1,2})-(\d{1,2})-(\d{1,2})-(\d{1,2})-(\d{4}).txt$/) }.map do |file_name|
-                captured_time = file_name.match(/^tx-(\d{1,2})-(\d{1,2})-(\d{1,2})-(\d{1,2})-(\d{1,2})-(\d{4}).txt$/).captures
-                hour, minute, second, date, month, year = captured_time.map{ |file_name| file_name.to_i }
-                [file_name, Time.parse("%02d-%02d-%04d %02d:%02d:%02d" % [date, month, year, hour, minute, second])]
-            end.sort_by { |element| element[1] }.map { |element| element[0] }
-            files_in_tx.each_with_index do |file_name, idx|
-                captured_time = file_name.match(/^tx-(\d{1,2})-(\d{1,2})-(\d{1,2})-(\d{1,2})-(\d{1,2})-(\d{4}).txt$/).captures
-                idx_no = files_in_tx.length - idx
-                hour, minute, second, date, month, year = captured_time.map{ |element| element.to_i }
-                printf("[%3d] Transaction \#%03d - %02d-%02d-%04d %02d:%02d:%02d\n", idx_no, idx_no, date, month, year, hour, minute, second)
+            @order_history.reverse.each_with_index do |element, idx|
+                history_time = element["time"]
+                idx_updated = @order_history.length - idx
+                printf("[%3d] Order #%d\n", idx_updated, idx_updated)
             end
             puts "[  0] Quit"
             small_line_separator
@@ -382,10 +377,8 @@ D – Driver
                 puts err_message
             end
 
-            print "> "
-            input = STDIN.gets
-            input.downcase!
-            input.strip!
+            input = take_input
+
             begin
                 input_number = Integer(input)
             rescue ArgumentError
@@ -399,12 +392,20 @@ D – Driver
 
             clear
             begin
-                puts read_file("tx_log/#{files_in_tx[files_in_tx.length - input_number]}")
+                puts @order_history[@order_history.length - input_number - 1]["invoice"]
                 hold
             rescue Errno::EISDIR
                 err_message = "Invalid transaction: transaction not exists"
             end
         end
+    end
+
+    def take_input
+        print "> "
+        input = STDIN.gets
+        input.downcase!
+        input.strip!
+        input
     end
 
     def read_file(file_name)
@@ -413,19 +414,4 @@ D – Driver
         file.close
         return data
     end
-
-    def from_data(data)
-        @map_obj.from_data(data)
-    end
-
-    #Convert to TOML
-=begin
-    def to_toml
-        map_data = @map_obj.map_toml
-        file = File.open("spec/example.toml", "w")
-        file.print TOML::Generator.new(map_data).body
-        file.close
-        hold
-    end
-=end
 end

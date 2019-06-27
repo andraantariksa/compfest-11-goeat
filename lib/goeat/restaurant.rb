@@ -1,4 +1,4 @@
-# Driver name list
+# Restaurant name list
 RESTAURANT_FIRST_NAME = ["Selera", "Mc", "Berkah", "Barokah", "Warteg"]
 RESTAURANT_LAST_NAME = ["Bunda", "Bahari", "Jaya", "Nusantara", "Sederhana", "88", "Lezat"]
 RESTAURANT_USED_NAME = []
