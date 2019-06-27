@@ -1,0 +1,155 @@
+map = [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,1,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,0],
+[0,2,2,2,2,2,1,1,1,1,1,1,2,2,1,1,1,1,1,0],
+[0,2,2,2,2,1,1,1,1,1,1,1,2,2,1,1,2,2,1,0],
+[0,1,2,2,2,2,1,1,1,1,1,1,2,2,2,2,2,2,2,0],
+[0,1,2,2,2,2,1,1,4,2,2,2,2,2,2,2,2,2,2,0],
+[0,1,1,2,2,1,1,1,2,2,2,2,2,2,2,2,2,2,1,0],
+[0,1,2,2,2,1,1,1,1,2,2,2,2,2,2,2,2,2,1,0],
+[0,2,2,2,2,2,1,1,2,2,2,2,2,2,2,2,2,2,1,0],
+[0,1,2,2,2,2,2,1,2,2,2,2,2,2,2,5,2,2,1,0],
+[0,1,1,2,2,2,4,1,2,2,7,2,2,2,2,2,4,2,1,0],
+[0,1,1,1,2,2,2,1,1,2,2,2,2,2,2,2,2,2,1,0],
+[0,1,1,1,2,2,2,4,1,2,2,2,2,4,2,2,2,2,1,0],
+[0,1,1,2,2,2,2,2,1,2,2,2,2,2,2,2,2,1,1,0],
+[0,1,1,2,5,2,2,2,1,2,2,2,2,2,2,2,1,1,1,0],
+[0,1,2,2,2,2,2,2,1,2,2,2,2,2,2,2,1,1,1,0],
+[0,1,2,2,2,2,2,2,1,2,2,2,2,2,2,2,1,1,1,0],
+[0,1,1,1,1,2,2,2,1,2,2,2,2,2,2,2,1,1,1,0],
+[0,1,1,1,1,1,1,2,1,1,5,2,1,1,1,1,1,1,1,0],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]]
+
+[[drivers]]
+coord = [6,10]
+
+[drivers.object]
+first_time = true
+name = "Andra Kurniawan"
+plate = "KD2971I"
+rating = 0.0
+
+[[drivers]]
+coord = [16,10]
+
+[drivers.object]
+first_time = true
+name = "Aria Priyanto"
+plate = "K9387V"
+rating = 0.0
+
+[[drivers]]
+coord = [13,12]
+
+[drivers.object]
+first_time = true
+name = "Angga Saputra"
+plate = "L45261A"
+rating = 0.0
+
+[[drivers]]
+coord = [7,12]
+
+[drivers.object]
+first_time = true
+name = "Gilang Priyanto"
+plate = "FL48987O"
+rating = 0.0
+
+[[drivers]]
+coord = [8,5]
+
+[drivers.object]
+first_time = true
+name = "Aria Sunarmo"
+plate = "T2773K"
+rating = 0.0
+
+[[restaurants]]
+coord = [4,14]
+
+[restaurants.object]
+name = "Mc Bahari"
+
+[[restaurants.object.menu]]
+name = "Ayam Bakar"
+price = 44000
+
+[[restaurants.object.menu]]
+name = "Ayam Goreng"
+price = 48000
+
+[[restaurants.object.menu]]
+name = "Nasi Bakar"
+price = 27000
+
+[[restaurants.object.menu]]
+name = "Telur Balado"
+price = 18000
+
+[[restaurants.object.menu]]
+name = "Mie Goreng"
+price = 31000
+
+[[restaurants.object.menu]]
+name = "Gurame Bakar"
+price = 35000
+
+[[restaurants.object.menu]]
+name = "Kwetiaw"
+price = 42000
+
+[[restaurants]]
+coord = [15,9]
+
+[restaurants.object]
+name = "Selera Nusantara"
+
+[[restaurants.object.menu]]
+name = "Kwetiaw"
+price = 12000
+
+[[restaurants.object.menu]]
+name = "Telur Balado"
+price = 14000
+
+[[restaurants.object.menu]]
+name = "Nasi Bakar"
+price = 11000
+
+[[restaurants.object.menu]]
+name = "Nasi Goreng"
+price = 42000
+
+[[restaurants]]
+coord = [10,18]
+
+[restaurants.object]
+name = "Selera 88"
+
+[[restaurants.object.menu]]
+name = "Mie Rebus"
+price = 48000
+
+[[restaurants.object.menu]]
+name = "Ayam Bakar"
+price = 11000
+
+[[restaurants.object.menu]]
+name = "Telur Balado"
+price = 37000
+
+[[restaurants.object.menu]]
+name = "Nasi Goreng"
+price = 28000
+
+[[restaurants.object.menu]]
+name = "Burger"
+price = 35000
+
+[[restaurants.object.menu]]
+name = "Ayam Goreng"
+price = 49000
+
+[[restaurants.object.menu]]
+name = "Kwetiaw"
+price = 50000

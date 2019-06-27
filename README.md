@@ -10,6 +10,8 @@ HOW TO USE GO-EAT
 4. Take the food – Get ready as the nearest driver-partner makes their way to you, then you can take the food that you have already ordered
 4. Enjoy the food
 
+## Example Map
+
 MAP LEGEND
 R – Restaurant
 D – Driver
@@ -40,37 +42,75 @@ D – Driver
 
 ## Usage
 
-There's 3 way to use Go-Eat
+There are 3 way to run Go-Eat app
 
 ### Without any argument
 
 ```
-ruby lib/goeat.rb
+ruby goeat.rb
 ```
 
 ### With file path as it's argument
 
 ```
-ruby lib/goeat.rb spec/example.toml
+ruby goeat.rb spec/example.toml
 ```
 
 ### With 3 arguments
 
 ```
-ruby lib/goeat.rb MAP_SIDE_SIZE USER_X_POSITION USER_Y_POSITION
+ruby goeat.rb MAP_SIDE_SIZE USER_X_POSITION USER_Y_POSITION
 ```
 
 e.g
 
 ```
-ruby lib/goeat.rb 20 10 10
+ruby goeat.rb 20 10 10
 ```
 
 There's a border on the map so you can't make the user on the border, in this case USER_X_POSITION as 0 or USER_X_POSITION as 10 (as the coordinate starts from 0).
 
-## Why TOML?
 
-I choose TOML simply because it's more human-readable and the format is much more simple especially for a nested list or dictionary.
+## Running the test
+
+To make sure the program run correctly, you can try to run
+
+```
+rspec
+```
+
+## Design choice
+
+![Design choice](img/design-choice.png)
+
+- Interface – An interface that bridge the user with the system
+  - Map – A map model to generate a random map which contains drivers and restaurants, it also helps the system to decide shortest path or near object
+    - Restaurant – Restaurant system with it's menu
+    - Driver – Driver system with rating system
+
+### Map generation
+
+When you try to run Go-Eat, the application will generate a random map immediately. The map was generated with cellular automata map generation.
+
+#### How it works
+
+- Create a map (or a rectangle or a 2 dimentional array) with a certain size (`width` x `height`) consist of "wall" as it's elements
+- Set up the border, so the border wouldn't be used
+- Pick a random `(width * height) * wall_percentage` map element and change them into a floor
+- Iterate through all of the map element. If it was a floor and have more than 5 walls surrounding it, change it into wall. If it was not a wall or a wall and have less than 4 wall surrounding it, change it into floor.
+- You will have a cave rooms, but it still splitted away, so you have to join it together. In this map generation, I join them together by digging a "tunnel" to the center of map.
+
+**The default map wall density is 40%**
+
+### Path finding algorithm
+
+![Breadth-first search](https://upload.wikimedia.org/wikipedia/commons/4/46/Animated_BFS.gif)
+
+I use **[Breadth-first search](https://en.wikipedia.org/wiki/Breadth-first_search)** for the shortest path / closest thing stuff. It tranverse through one level of children nodes (the surrounding grid), then tranverse through the level of grandchildren nodes and so on, so it will be good in this case to find out where's the closest driver is, because there's a lot of driver around.
+
+### Why TOML?
+
+I choose TOML simply because it's more human-readable and the format is much more simple especially for the dictionary rather than the other file format like JSON or YAML.
 
 ## License
 
