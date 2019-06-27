@@ -100,12 +100,19 @@ class Interface
 
     end
 
-    def deliver(restaurant, invoice, driver, path_to_user)
+    def deliver(restaurant, invoice, invoice_toml, driver, path_to_user)
         clear
         err_message = ""
 
         driver_obj = driver["object"]
         restaurant_obj = restaurant["object"]
+
+        invoice += "\n\n"
+        invoice += "Driver info\n"
+        invoice += "=" * 53 + "\n"
+        invoice += "Name: #{driver_obj.name}\n"
+        invoice += "Plate: #{driver_obj.plate}\n"
+        invoice += "=" * 53 + "\n"
 
         puts "We have got you a driver!"
         small_line_separator
@@ -186,8 +193,8 @@ class Interface
                                 "invoice" => invoice
         })
 
-        file = File.open("tx_log/tx-#{time.hour}-#{time.min}-#{time.sec}-#{time.day}-#{time.month}-#{time.year}.txt", "w")
-        file.puts invoice
+        file = File.open("tx_log/tx-#{time.hour}-#{time.min}-#{time.sec}-#{time.day}-#{time.month}-#{time.year}.toml", "w")
+        file.puts invoice_toml
         file.close
 
         true
@@ -200,13 +207,15 @@ class Interface
 
         driver_cost_to_restaurant = (driver["route"].length - 1) * @driver_cost_per_unit
         driver_cost_to_customer =  (path_to_user.length - 1) * @driver_cost_per_unit
+        distance_total = (driver["route"].length - 1) + (path_to_user.length - 1)
 
         err_message = ""
 
         while true
             clear
 
-            invoice = generate_invoice(restaurant, cart, driver_cost_to_restaurant, driver_cost_to_customer)
+            invoice = generate_invoice(restaurant, cart, distance_total, @driver_cost_per_unit, driver_cost_to_restaurant + driver_cost_to_customer)
+            invoice_toml = generate_invoice_toml(restaurant, cart, driver, distance_total, @driver_cost_per_unit, driver_cost_to_restaurant + driver_cost_to_customer)
             puts invoice
 
             small_line_separator
@@ -219,7 +228,7 @@ class Interface
 
             case input
             when "yes"
-                return deliver(restaurant, invoice, driver, path_to_user)
+                return deliver(restaurant, invoice, invoice_toml, driver, path_to_user)
             when "no"
                 return false
             else
@@ -228,7 +237,35 @@ class Interface
         end
     end
 
-    def generate_invoice(restaurant, cart, driver_cost_to_restaurant, driver_cost_to_customer)
+    def generate_invoice_toml(restaurant, cart, driver, distance_total, driver_cost_per_unit, deliver_cost_total)
+        restaurant_obj = restaurant["object"]
+        driver_obj = driver["object"]
+
+        output_toml = {
+            "restaurant_name" => restaurant_obj.name,
+            "restaurant_menu" => [],
+            "driver_cost_per_unit" => driver_cost_per_unit,
+            "deliver_cost_total" => deliver_cost_total,
+        }
+        total_price = 0
+        restaurant_obj.menu.each_with_index do |menu_item, idx|
+            total_price += menu_item["price"] * cart[idx]
+            output_toml["restaurant_menu"].push({
+                                                    "name" => menu_item["name"],
+                                                    "price" => menu_item["price"],
+                                                    "quantity" => cart[idx],
+                                                    "subtotal" => menu_item["price"] * cart[idx]
+            })
+        end
+        output_toml["grand_total"] = total_price + deliver_cost_total
+        output_toml["driver"] = {
+            "name" => driver_obj.name,
+            "plate" => driver_obj.plate
+        }
+        TOML::Generator.new(output_toml).body
+    end
+
+    def generate_invoice(restaurant, cart, distance_total, driver_cost_per_unit, deliver_cost_total)
         restaurant_obj = restaurant["object"]
 
         invoice = ""
@@ -241,13 +278,12 @@ class Interface
             total_price += cart[idx] * menu_item["price"]
             invoice += "[%2d] %-20s - %6d - %3d - %10d\n" % [idx + 1, menu_item["name"], menu_item["price"], cart[idx], cart[idx] * menu_item["price"]]
         end
-        invoice += "[ 0] Cancel\n"
         invoice += "=" * 53 + "\n"
         invoice += "Total food price %36d\n" % [total_price]
         invoice += "=" * 53 + "\n"
-        invoice += "Driver cost %41d\n" % [driver_cost_to_restaurant + driver_cost_to_customer]
+        invoice += "Driver cost %28s   %10d\n" % ["#{distance_total} unit * #{driver_cost_per_unit}", deliver_cost_total]
         invoice += "=" * 53 + "\n"
-        invoice += "Grand total %41d\n" % [total_price + driver_cost_to_restaurant + driver_cost_to_customer]
+        invoice += "Grand total %41d\n" % [total_price + deliver_cost_total]
         invoice += "=" * 53
         invoice
     end
