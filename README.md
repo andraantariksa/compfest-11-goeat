@@ -1,3 +1,9 @@
+Second stage assignment of [COMPFEST](https://www.compfest.id/) 2019 Software Engineering Academy ([Archived page](https://web.archive.org/web/20190627183033/http://www.compfest.id/academy/sea/)).
+
+Link of the assignment detail can be found [here](https://docs.google.com/document/d/1C5EUZJjNoWGRfgnFb1zD78eWQciSqRs-woFG1vYNT04/edit).
+
+---
+
 # Go-Eat
 
 Thanks for using Go-Eat! Order your food now – all you need to do is just order the food from the restaurant that are available on the apps.
