@@ -18,10 +18,11 @@ HOW TO USE GO-EAT
 
 ## Example Map
 
-MAP LEGEND
-R – Restaurant
-D – Driver
-@ – You
+**MAP LEGEND**
+
+- R – Restaurant
+- D – Driver
+- @ – You
 
 ```
 # # # # # # # # # # # # # # # # # # # #
